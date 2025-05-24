@@ -380,7 +380,7 @@ function createTimeline(data) {
         );
         timelineFrequency.textContent = item.frequency;
 
-        console.log(item.frequency, "item.frequency");
+        console.log(item, "item");
 
         const imageFilename = item.filename.replace(".md", "") + ".png";
         const imagePath = `data/images/${imageFilename}`;
