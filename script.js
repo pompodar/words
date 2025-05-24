@@ -95,6 +95,9 @@ function applyLayoutClasses() {
                 activeDetail.classList.remove("active");
             }
         });
+
+    stopAllAudios(); // Stop audio when layout changes
+
     if (isVertical) {
         setTimeout(() => {
             adjustVerticalCardPositions();
@@ -386,7 +389,93 @@ function createTimeline(data) {
         timelineImage.alt = item.title;
         timelineImage.classList.add("timeline-image");
 
-        timelineTitleContainerInner.appendChild(timelineTitle);
+        // --- Audio Player Elements ---
+        const audioButton = document.createElement("button");
+        audioButton.classList.add(
+            "audio-button",
+            "ml-2",
+            "p-1",
+            "text-sm",
+            "bg-gray-200",
+            "rounded",
+            "hover:bg-gray-300",
+            "focus:outline-none"
+        );
+        audioButton.textContent = "▶️"; // Initial state: Play icon
+        audioButton.setAttribute("aria-label", `Play audio for ${item.title}`);
+        audioButton.style.cursor = "pointer";
+        audioButton.disabled = true; // Disable initially until audio metadata loads
+
+        const audioSrc = `data/audios/${item.title}.mp3`; // Assumes title matches filename and .mp3 extension
+        const audioElement = new Audio(audioSrc);
+        audioElement.setAttribute("preload", "metadata");
+
+        audioButton.audioElement = audioElement; // Store audio element on the button
+        audioButton.dataset.playing = "false";
+
+        audioElement.addEventListener("loadedmetadata", () => {
+            audioButton.disabled = false; // Enable button if metadata loads
+            audioButton.title = `Play audio (duration: ${formatTime(
+                audioElement.duration
+            )})`;
+        });
+
+        audioElement.addEventListener("error", (e) => {
+            console.warn(
+                `Audio file not found or error loading: ${audioSrc}`,
+                e
+            );
+            audioButton.textContent = "🔇"; // Indicate audio not available
+            audioButton.title = "Audio not available";
+            audioButton.disabled = true;
+        });
+
+        audioElement.addEventListener("ended", () => {
+            audioButton.textContent = "▶️";
+            audioButton.dataset.playing = "false";
+            audioElement.currentTime = 0; // Reset for next play
+        });
+
+        audioButton.addEventListener("click", (event) => {
+            event.stopPropagation(); // Prevent card detail toggle
+            const btn = event.currentTarget;
+            const audio = btn.audioElement;
+
+            if (btn.dataset.playing === "false") {
+                stopAllAudios(); // Stop any other playing audio
+                audio
+                    .play()
+                    .then(() => {
+                        btn.textContent = "⏸️"; // Pause icon
+                        btn.dataset.playing = "true";
+                    })
+                    .catch((error) => {
+                        console.error(
+                            `Error playing audio (${audioSrc}):`,
+                            error
+                        );
+                        btn.textContent = "⚠️";
+                        btn.title = "Error playing audio";
+                        btn.disabled = true;
+                    });
+            } else {
+                audio.pause();
+                btn.textContent = "▶️"; // Play icon
+                btn.dataset.playing = "false";
+            }
+        });
+
+        const titleAndAudioWrapper = document.createElement("div");
+        titleAndAudioWrapper.classList.add(
+            "flex",
+            "items-center",
+            "justify-between",
+            "w-full"
+        );
+        titleAndAudioWrapper.appendChild(timelineTitle);
+        titleAndAudioWrapper.appendChild(audioButton);
+
+        timelineTitleContainerInner.appendChild(titleAndAudioWrapper);
         timelineTitleContainerInner.appendChild(timelineFrequency);
 
         timelineTitleContainer.appendChild(timelineTitleContainerInner);
@@ -586,4 +675,26 @@ function adjustVerticalCardPositions() {
             item.style.top = "0"; // Reset to default position
         }
     });
+}
+
+// --- Helper Function to Format Time ---
+function formatTime(seconds) {
+    if (isNaN(seconds)) return "0:00";
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${minutes}:${secs < 10 ? "0" : ""}${secs}`;
+}
+
+// --- Helper Function to Stop All Audios ---
+function stopAllAudios() {
+    document
+        .querySelectorAll('.audio-button[data-playing="true"]')
+        .forEach((btn) => {
+            if (btn.audioElement) {
+                btn.audioElement.pause();
+                btn.audioElement.currentTime = 0; // Reset time
+                btn.textContent = "▶️";
+                btn.dataset.playing = "false";
+            }
+        });
 }
