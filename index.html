@@ -98,8 +98,8 @@
             background-color: #d1d5db; /* gray-300 */
         }
         .toggle-button.active {
-            background-color: #f6d43b; /* blue-500 */
-            color: #ffffff; /* white */
+            background-color: #f0f63b; /* blue-500 */
+            color: #22223b;
         }
         .timeline-usage {
             font-size: 0.8rem;
@@ -169,8 +169,14 @@
             border-top: 5px solid #374151; /* Arrow color */
         }
 
+        .timeline-container {
+            display: flex;
+        }
+
         /* --- Vertical Layout Styles --- */
         .timeline-container.is-vertical {
+            flex-direction: column;
+            align-items: block;;
             position: relative;
             padding: 1rem 0; /* Padding top/bottom */
         }
@@ -311,7 +317,6 @@
 
         /* --- Horizontal Layout Styles --- */
         .timeline-container.is-horizontal {
-            display: flex;
             overflow-x: auto; /* Enable horizontal scrolling */
             padding: 50px 20px; /* Padding top/bottom for content, left/right */
             position: relative;
@@ -401,6 +406,7 @@
         <div class="flex justify-center space-x-4 mb-10">
             <button class="toggle-button active vertical-btn">Vertical View</button>
             <button class="toggle-button horizontal-btn">Horizontal View</button>
+            <button class="toggle-button table-btn" id="show-table-btn">Table View</button>
         </div>
 
         <div class="flex justify-center space-x-4 mb-10">
@@ -442,6 +448,40 @@
         <div class="timeline-line"></div>
     </div>
     
-    <script src="./script.js"></script>
+    <div id="words-table-container" class="hidden mt-10">
+        <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden">
+            <thead class="bg-yellow-100">
+                <tr>
+                    <th class="py-3 px-4 border-b font-bold text-indigo-900">Word</th>
+                    <th class="py-3 px-4 border-b font-bold text-indigo-900">Translation</th>
+                    <th class="py-3 px-4 border-b font-bold text-indigo-900">Category</th>
+                    <th class="py-3 px-4 border-b font-bold text-indigo-900">Usage</th>
+                    <th class="py-3 px-4 border-b font-bold text-indigo-900">Audio</th>
+                    <th class="py-3 px-4 border-b font-bold text-indigo-900">Image</th>
+                </tr>
+            </thead>
+            <tbody id="words-table-body">
+                <!-- Table rows will be injected by JS -->
+            </tbody>
+        </table>
+    </div>
+
+    <script src="tablePagination.js"></script>
+    <script src="script.js"></script>
+    <script>
+        document
+    .getElementById("show-table-btn")
+    .addEventListener("click", function () {
+        document.getElementById("timeline-container").classList.add("hidden");
+        document
+            .getElementById("words-table-container")
+            .classList.remove("hidden");
+        document
+            .querySelectorAll(".toggle-button")
+            .forEach((btn) => btn.classList.remove("active"));
+        this.classList.add("active");
+        loadWordsTable();
+    });
+    </script>
 </body>
 </html>

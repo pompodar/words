@@ -584,34 +584,147 @@ function switchToImportance(importanceLevel) {
     filterByImportance(importanceLevel);
 }
 
-// --- Attach Event Listeners ---
-verticalBtn.addEventListener("click", switchToVertical);
-horizontalBtn.addEventListener("click", switchToHorizontal);
+// 1. Add the Table View button to the DOM
+const viewButtonsRow = document.querySelector(
+    ".flex.justify-center.space-x-4.mb-10"
+);
 
-// Add event listener for the importance dropdown
-importanceSelect.addEventListener("change", (event) => {
-    const selectedImportance = parseInt(event.target.value);
-    switchToImportance(selectedImportance);
+// 2. Add the table container to the DOM (after timeline-container)
+if (timelineContainer && !document.getElementById("words-table-container")) {
+    const tableDiv = document.createElement("div");
+    tableDiv.id = "words-table-container";
+    tableDiv.className = "hidden mt-10";
+    tableDiv.innerHTML = `
+        <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow">
+            <thead>
+                <tr>
+                    <th class="py-2 px-4 border-b">Word</th>
+                    <th class="py-2 px-4 border-b">Translation</th>
+                    <th class="py-2 px-4 border-b">Category</th>
+                    <th class="py-2 px-4 border-b">Usage</th>
+                </tr>
+            </thead>
+            <tbody id="words-table-body">
+                <!-- Table rows will be injected by JS -->
+            </tbody>
+        </table>
+    `;
+    timelineContainer.parentNode.insertBefore(
+        tableDiv,
+        timelineContainer.nextSibling
+    );
+}
 
-    adjustVerticalCardPositions();
+// 3. Table View button logic
+document
+    .getElementById("show-table-btn")
+    .addEventListener("click", function () {
+        document.getElementById("timeline-container").classList.add("hidden");
+        document
+            .getElementById("words-table-container")
+            .classList.remove("hidden");
+        document
+            .querySelectorAll(".toggle-button")
+            .forEach((btn) => btn.classList.remove("active"));
+        this.classList.add("active");
+        loadWordsTable();
+    });
+
+// 4. Restore timeline view when other buttons are clicked
+document.querySelector(".vertical-btn").addEventListener("click", function () {
+    const timeline = document.getElementById("timeline-container");
+    timeline.classList.remove("is-horizontal");
+    timeline.classList.add("is-vertical");
+    timeline.classList.remove("hidden");
+    document.getElementById("words-table-container").classList.add("hidden");
+    document
+        .querySelectorAll(".toggle-button")
+        .forEach((btn) => btn.classList.remove("active"));
+    this.classList.add("active");
 });
 
-categorySelect.addEventListener("change", (event) => {
-    const selectedCategory = event.target.value;
-    filterByCategory(selectedCategory);
+document
+    .querySelector(".horizontal-btn")
+    .addEventListener("click", function () {
+        const timeline = document.getElementById("timeline-container");
+        timeline.classList.remove("is-vertical");
+        timeline.classList.add("is-horizontal");
+        timeline.classList.remove("hidden");
+        document
+            .getElementById("words-table-container")
+            .classList.add("hidden");
+        document
+            .querySelectorAll(".toggle-button")
+            .forEach((btn) => btn.classList.remove("active"));
+        this.classList.add("active");
+    });
 
-    adjustVerticalCardPositions();
-});
+// 5. Load and display words in the table
+async function loadWordsTable() {
+    const tbody = document.getElementById("words-table-body");
+    tbody.innerHTML =
+        '<tr><td colspan="4" class="text-center py-4">Loading...</td></tr>';
 
-tagSelect.addEventListener("change", (event) => {
-    const selectedTag = event.target.value;
-    filterByTag(selectedTag);
+    // Fetch the index.json file
+    let index;
+    try {
+        const res = await fetch("./data/index.json");
+        index = await res.json();
+    } catch (e) {
+        tbody.innerHTML =
+            '<tr><td colspan="4" class="text-center py-4 text-red-600">Failed to load index.json</td></tr>';
+        return;
+    }
 
-    adjustVerticalCardPositions();
-});
+    // Fetch all word .md files and parse frontmatter
+    const wordPromises = index
+        .filter((item) => item.importance === 1)
+        .map(async (item) => {
+            try {
+                const res = await fetch(`./data/importance-1/${item.filename}`);
+                const text = await res.text();
+                // Parse frontmatter
+                const match = text.match(/---([\s\S]*?)---([\s\S]*)/);
+                if (!match) return null;
+                const frontmatter = match[1];
+                const usage = match[2].trim();
+                const data = {};
+                frontmatter.split("\n").forEach((line) => {
+                    const [key, ...rest] = line.split(":");
+                    if (key && rest.length) {
+                        data[key.trim()] = rest.join(":").trim();
+                    }
+                });
+                data.usage = usage;
+                return data;
+            } catch {
+                return null;
+            }
+        });
 
-// Add listener to the container using event delegation for toggling details
-timelineContainer.addEventListener("click", toggleDetails);
+    const words = (await Promise.all(wordPromises)).filter(Boolean);
+
+    // Render table rows
+    if (words.length === 0) {
+        tbody.innerHTML =
+            '<tr><td colspan="4" class="text-center py-4">No words found.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = words
+        .map(
+            (word) => `
+        <tr>
+            <td class="py-2 px-4 border-b">${word.title || ""}</td>
+            <td class="py-2 px-4 border-b">${word.translation || ""}</td>
+            <td class="py-2 px-4 border-b">${word.category || ""}</td>
+            <td class="py-2 px-4 border-b">${word.usage || ""}</td>
+        </tr>
+    `
+        )
+        .join("");
+
+    setupTablePagination(words);
+}
 
 // --- Initial Setup ---
 // Set default view (e.g., vertical) and apply initial layout classes
