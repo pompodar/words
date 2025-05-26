@@ -584,7 +584,7 @@ function switchToImportance(importanceLevel) {
     filterByImportance(importanceLevel);
 }
 
-// 1 Add the Table View button to the DOM
+// 1. Add the Table View button to the DOM
 const viewButtonsRow = document.querySelector(
     ".flex.justify-center.space-x-4.mb-10"
 );
