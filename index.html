@@ -40,15 +40,24 @@
     <h1 class="text-3xl font-bold text-yellow-900 mb-6">Words</h1>
 
     <div class="flex flex-wrap gap-4 mb-6">
-        <!-- Removed importance-select -->
-        <select id="category-select" class="p-2 rounded border border-gray-300">
-            <option value="all">All Categories</option>
-            <!-- Categories will be populated by JS -->
-        </select>
-        <select id="tag-select" class="p-2 rounded border border-gray-300">
-            <option value="all">All Tags</option>
-            <!-- Tags will be populated by JS -->
-        </select>
+        <input
+          id="search-input"
+          type="text"
+          placeholder="Search words..."
+          class="p-2 rounded border border-gray-300"
+          style="min-width: 200px;"
+        />
+        <select id="language-select" class="p-2 rounded border border-gray-300"></select>
+        <select id="category-select" class="p-2 rounded border border-gray-300"></select>
+        <select id="tag-select" class="p-2 rounded border border-gray-300"></select>
+        <div class="relative inline-block" id="column-dropdown-container">
+          <button id="column-dropdown-btn" class="p-2 rounded border border-gray-300 bg-white shadow">
+            Columns ▾
+          </button>
+          <div id="column-dropdown" class="absolute left-0 mt-2 w-48 bg-white border border-gray-300 rounded shadow-lg z-10 hidden">
+            <!-- Checkboxes will be injected by JS -->
+          </div>
+        </div>
     </div>
     <div id="words-table-container" class="mt-10">
         <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden">

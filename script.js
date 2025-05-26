@@ -1,7 +1,18 @@
-// --- Keep only filter, table, and pagination logic ---
-
+// --- Add language filter ---
 const categorySelect = document.getElementById("category-select");
 const tagSelect = document.getElementById("tag-select");
+
+// Add language select to DOM if not present
+let languageSelect = document.getElementById("language-select");
+if (!languageSelect) {
+    languageSelect = document.createElement("select");
+    languageSelect.id = "language-select";
+    languageSelect.className = "p-2 rounded border border-gray-300";
+    languageSelect.innerHTML = `<option value="all">All Languages</option>`;
+    // Insert as first filter
+    const filterDiv = document.querySelector(".flex.flex-wrap.gap-4.mb-6");
+    filterDiv.insertBefore(languageSelect, filterDiv.firstChild);
+}
 
 // --- Load and display words in the table ---
 async function loadWordsTable() {
@@ -47,6 +58,7 @@ async function loadWordsTable() {
     const words = (await Promise.all(wordPromises)).filter(Boolean);
 
     // Populate filter dropdowns
+    populateLanguageSelect(words);
     populateCategorySelect(words);
     populateTagSelect(words);
 
@@ -57,12 +69,22 @@ async function loadWordsTable() {
 }
 
 // --- Filtering logic ---
+const searchInput = document.getElementById("search-input");
+
+// Update applyFilters to include search
 function applyFilters() {
+    const language = languageSelect.value;
     const category = categorySelect.value;
     const tag = tagSelect.value;
+    const search = searchInput.value.trim().toLowerCase();
 
     let filtered = window.allWords || [];
 
+    if (language !== "all") {
+        filtered = filtered.filter(
+            (w) => w.language && w.language === language
+        );
+    }
     if (category !== "all") {
         filtered = filtered.filter(
             (w) => w.category && w.category.includes(category)
@@ -71,11 +93,38 @@ function applyFilters() {
     if (tag !== "all") {
         filtered = filtered.filter((w) => w.tags && w.tags.includes(tag));
     }
+    if (search) {
+        filtered = filtered.filter(
+            (w) =>
+                (w.title && w.title.toLowerCase().includes(search)) ||
+                (w.translation &&
+                    w.translation.toLowerCase().includes(search)) ||
+                (w.usage && w.usage.toLowerCase().includes(search)) ||
+                (w.category && w.category.toLowerCase().includes(search)) ||
+                (w.language && w.language.toLowerCase().includes(search))
+        );
+    }
 
     setupTablePagination(filtered);
 }
 
+// Add event listener for search
+searchInput.addEventListener("input", applyFilters);
+
 // --- Populate filter dropdowns ---
+function populateLanguageSelect(words) {
+    const languages = new Set();
+    words.forEach((w) => {
+        if (w.language) {
+            languages.add(w.language.trim());
+        }
+    });
+    languageSelect.innerHTML = '<option value="all">All Languages</option>';
+    languages.forEach((l) => {
+        if (l) languageSelect.innerHTML += `<option value="${l}">${l}</option>`;
+    });
+}
+
 function populateCategorySelect(words) {
     const categories = new Set();
     words.forEach((w) => {
@@ -107,53 +156,104 @@ const WORDS_PER_PAGE = 4;
 let currentPage = 1;
 let paginatedWords = [];
 
+// Place this after your filter dropdowns and before table rendering logic
+
+const columns = [
+    { key: "title", label: "Word" },
+    { key: "translation", label: "Translation" },
+    { key: "category", label: "Category" },
+    { key: "usage", label: "Usage" },
+    { key: "audio", label: "Audio" },
+    { key: "image", label: "Image" },
+];
+
+// Create custom dropdown with checkboxes
+function createColumnDropdown() {
+    const dropdown = document.getElementById("column-dropdown");
+    dropdown.innerHTML = columns
+        .map(
+            (col) => `
+        <label class="flex items-center px-3 py-2 hover:bg-yellow-50 cursor-pointer">
+            <input type="checkbox" class="column-checkbox mr-2" value="${col.key}" checked>
+            ${col.label}
+        </label>
+    `
+        )
+        .join("");
+}
+createColumnDropdown();
+
+// Toggle dropdown visibility
+const dropdownBtn = document.getElementById("column-dropdown-btn");
+const dropdown = document.getElementById("column-dropdown");
+dropdownBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle("hidden");
+});
+// Hide dropdown when clicking outside
+document.addEventListener("click", () => dropdown.classList.add("hidden"));
+
+// Helper to get selected columns
+function getSelectedColumns() {
+    return Array.from(
+        document.querySelectorAll(".column-checkbox:checked")
+    ).map((cb) => cb.value);
+}
+
+// Update table header and rows based on selected columns
 function renderTablePage(words) {
+    const selectedCols = getSelectedColumns();
+    const thead = document.querySelector("#words-table-container thead tr");
     const tbody = document.getElementById("words-table-body");
-    if (!tbody) return;
+    if (!thead || !tbody) return;
+
+    // Render header
+    thead.innerHTML = columns
+        .filter((col) => selectedCols.includes(col.key))
+        .map(
+            (col) =>
+                `<th class="py-3 px-4 border-b font-bold text-indigo-900">${col.label}</th>`
+        )
+        .join("");
+
+    // Render rows
     tbody.innerHTML = words
         .map(
-            (word, idx) => `
-        <tr class="transition hover:bg-yellow-100 ${
-            idx % 2 === 0 ? "bg-white" : "bg-yellow-50"
-        }">
-            <td class="py-3 px-4 border-b font-serif text-lg text-indigo-800">${
-                word.title || ""
-            }</td>
-            <td class="py-3 px-4 border-b text-gray-700">${
-                word.translation || ""
-            }</td>
-            <td class="py-3 px-4 border-b text-gray-500 italic">${
-                word.category || ""
-            }</td>
-            <td class="py-3 px-4 border-b text-gray-600">${
-                word.usage || ""
-            }</td>
-            <td class="py-3 px-4 border-b text-center">
-                ${
-                    word.title
-                        ? `<button class="play-btn bg-yellow-300 hover:bg-yellow-400 rounded-full p-2 shadow" data-audio="./data/audios/${word.title}.mp3" title="Play audio">▶️</button>
-                        <audio src="./data/audios/${word.title}.mp3" class="hidden"></audio>`
-                        : ""
-                }
-            </td>
-            <td class="py-3 px-4 border-b text-center">
-                ${
-                    word.title
-                        ? `<img src="./data/images/${word.title}.png" alt="image" class="mx-auto rounded shadow border border-gray-200" style="max-width:60px;max-height:60px;object-fit:contain;">`
-                        : ""
-                }
-            </td>
-        </tr>
-    `
+            (word, idx) =>
+                `<tr class="transition hover:bg-yellow-100 ${
+                    idx % 2 === 0 ? "bg-white" : "bg-yellow-50"
+                }">` +
+                columns
+                    .filter((col) => selectedCols.includes(col.key))
+                    .map((col) => {
+                        if (col.key === "audio") {
+                            return `<td class="py-3 px-4 border-b text-center">${
+                                word.title
+                                    ? `<button class="play-btn bg-yellow-300 hover:bg-yellow-400 rounded-full p-2 shadow" data-audio="./data/audios/${word.title}.mp3" title="Play audio">▶️</button>
+                                    <audio src="./data/audios/${word.title}.mp3" class="hidden"></audio>`
+                                    : ""
+                            }</td>`;
+                        }
+                        if (col.key === "image") {
+                            return `<td class="py-3 px-4 border-b text-center">${
+                                word.title
+                                    ? `<img src="./data/images/${word.title}.png" alt="image" class="mx-auto rounded shadow border border-gray-200" style="max-width:60px;max-height:60px;object-fit:contain;">`
+                                    : ""
+                            }</td>`;
+                        }
+                        return `<td class="py-3 px-4 border-b">${
+                            word[col.key] || ""
+                        }</td>`;
+                    })
+                    .join("") +
+                `</tr>`
         )
         .join("");
 
     // Play/pause logic for custom buttons
     tbody.querySelectorAll(".play-btn").forEach((btn) => {
         btn.addEventListener("click", function () {
-            // Pause all other audios
             tbody.querySelectorAll("audio").forEach((a) => a.pause());
-            // Get the next sibling audio element
             const audio = this.nextElementSibling;
             if (audio.paused) {
                 audio.classList.remove("hidden");
@@ -163,7 +263,6 @@ function renderTablePage(words) {
                 audio.pause();
                 this.textContent = "▶️";
             }
-            // When audio ends, reset button
             audio.onended = () => {
                 this.textContent = "▶️";
             };
@@ -210,8 +309,10 @@ function setupTablePagination(words) {
 }
 
 // --- Event listeners for filters ---
+languageSelect.addEventListener("change", applyFilters);
 categorySelect.addEventListener("change", applyFilters);
 tagSelect.addEventListener("change", applyFilters);
+dropdown.addEventListener("change", () => showCurrentPage());
 
 // --- Initial load ---
 document.addEventListener("DOMContentLoaded", () => {
