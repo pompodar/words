@@ -229,7 +229,7 @@ function renderTablePage(words) {
                         if (col.key === "audio") {
                             return `<td class="py-3 px-4 border-b text-center">${
                                 word.title
-                                    ? `<button class="play-btn bg-yellow-300 hover:bg-yellow-400 rounded-full p-2 shadow" data-audio="./data/audios/${word.title}.mp3" title="Play audio">▶️</button>
+                                    ? `<button class="play-btn h-10 bg-yellow-300 hover:bg-yellow-400 rounded-full p-2 shadow" data-audio="./data/audios/${word.title}.mp3" title="Play audio">▶️</button>
                                     <audio src="./data/audios/${word.title}.mp3" class="hidden"></audio>`
                                     : ""
                             }</td>`;
@@ -237,7 +237,7 @@ function renderTablePage(words) {
                         if (col.key === "image") {
                             return `<td class="py-3 px-4 border-b text-center">${
                                 word.title
-                                    ? `<img src="./data/images/${word.title}.png" alt="image" class="mx-auto rounded shadow border border-gray-200" style="max-width:60px;max-height:60px;object-fit:contain;">`
+                                    ? `<img src="./data/images/${word.title}.png" alt="image" class="mx-auto h-12 w-12 rounded-[50%] shadow border border-gray-200 hover:scale-[2] duration-300" style="max-width:60px;max-height:60px;object-fit:contain;">`
                                     : ""
                             }</td>`;
                         }
