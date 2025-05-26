@@ -40,7 +40,6 @@ async function loadWordsTable() {
             const match = text.match(/---([\s\S]*?)---([\s\S]*)/);
             if (!match) return null;
             const frontmatter = match[1];
-            const usage = match[2].trim();
             const data = {};
             frontmatter.split("\n").forEach((line) => {
                 const [key, ...rest] = line.split(":");
@@ -48,7 +47,6 @@ async function loadWordsTable() {
                     data[key.trim()] = rest.join(":").trim();
                 }
             });
-            data.usage = usage;
             return data;
         } catch {
             return null;
@@ -239,6 +237,15 @@ function renderTablePage(words) {
                                 word.title
                                     ? `<img src="./data/images/${word.title}.png" alt="image" class="mx-auto h-12 w-12 rounded-[50%] shadow border border-gray-200 hover:scale-[2] duration-300" style="max-width:60px;max-height:60px;object-fit:contain;">`
                                     : ""
+                            }</td>`;
+                        }
+                        if (col.key === "usage") {
+                            console.log(
+                                `Rendering usage for word: ${word.usage}`
+                            );
+
+                            return `<td class="py-3 px-4 border-b">${
+                                word.usage || ""
                             }</td>`;
                         }
                         return `<td class="py-3 px-4 border-b">${
