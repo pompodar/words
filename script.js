@@ -1,4 +1,5 @@
-const importanceSelect = document.getElementById("importance-select");
+// --- Keep only filter, table, and pagination logic ---
+
 const categorySelect = document.getElementById("category-select");
 const tagSelect = document.getElementById("tag-select");
 
@@ -22,7 +23,7 @@ async function loadWordsTable() {
     // Fetch all word .md files and parse frontmatter
     const wordPromises = index.map(async (item) => {
         try {
-            const res = await fetch(`./data/importance-1/${item.filename}`);
+            const res = await fetch(`./data/words/${item.filename}`);
             const text = await res.text();
             // Parse frontmatter
             const match = text.match(/---([\s\S]*?)---([\s\S]*)/);
@@ -57,15 +58,11 @@ async function loadWordsTable() {
 
 // --- Filtering logic ---
 function applyFilters() {
-    const importance = importanceSelect.value;
     const category = categorySelect.value;
     const tag = tagSelect.value;
 
     let filtered = window.allWords || [];
 
-    if (importance !== "all") {
-        filtered = filtered.filter((w) => w.importance == importance);
-    }
     if (category !== "all") {
         filtered = filtered.filter(
             (w) => w.category && w.category.includes(category)
@@ -213,7 +210,6 @@ function setupTablePagination(words) {
 }
 
 // --- Event listeners for filters ---
-importanceSelect.addEventListener("change", applyFilters);
 categorySelect.addEventListener("change", applyFilters);
 tagSelect.addEventListener("change", applyFilters);
 
