@@ -1,1 +1,1 @@
-δέ
+English usage frequency from https://wortschatz.uni-leipzig.de/en/download/English

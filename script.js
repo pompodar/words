@@ -154,15 +154,15 @@ const WORDS_PER_PAGE = 4;
 let currentPage = 1;
 let paginatedWords = [];
 
-// Place this after your filter dropdowns and before table rendering logic
-
+// Add "other translations" to your columns array
 const columns = [
-    { key: "title", label: "Word" },
-    { key: "translation", label: "Translation" },
-    { key: "category", label: "Category" },
-    { key: "usage", label: "Usage" },
-    { key: "audio", label: "Audio" },
-    { key: "image", label: "Image" },
+    { key: "title", label: "Word", visible: true },
+    { key: "translation", label: "Translation", visible: true },
+    { key: "other translations", label: "Other Translation", visible: false }, // hidden by default
+    { key: "category", label: "Category", visible: false }, // hidden by default
+    { key: "usage", label: "Usage", visible: true },
+    { key: "audio", label: "Audio", visible: true },
+    { key: "image", label: "Image", visible: true },
 ];
 
 // Create custom dropdown with checkboxes
@@ -172,7 +172,9 @@ function createColumnDropdown() {
         .map(
             (col) => `
         <label class="flex items-center px-3 py-2 hover:bg-yellow-50 cursor-pointer">
-            <input type="checkbox" class="column-checkbox mr-2" value="${col.key}" checked>
+            <input type="checkbox" class="column-checkbox mr-2" value="${
+                col.key
+            }"${col.visible ? " checked" : ""}>
             ${col.label}
         </label>
     `
@@ -240,12 +242,13 @@ function renderTablePage(words) {
                             }</td>`;
                         }
                         if (col.key === "usage") {
-                            console.log(
-                                `Rendering usage for word: ${word.usage}`
-                            );
-
                             return `<td class="py-3 px-4 border-b">${
                                 word.usage || ""
+                            }</td>`;
+                        }
+                        if (col.key === "other translations") {
+                            return `<td class="py-3 px-4 border-b">${
+                                word["other translations"] || ""
                             }</td>`;
                         }
                         return `<td class="py-3 px-4 border-b">${
